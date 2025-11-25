@@ -27,6 +27,21 @@
                 <Input id="description" v-model="formData.description" placeholder="Ej: Servicios profesionales"
                     class="h-12 text-lg" />
             </div>
+
+            <!-- Unidades de negocios -->
+            <div class="space-y-3">
+                <Label for="tagId" class="text-base font-medium">Unidades de negocios *</Label>
+                <Select v-model="selectedTagId" :disabled="isLoadingTags">
+                    <SelectTrigger class="h-12 text-lg">
+                        <SelectValue placeholder="Selecciona una unidad de negocio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem v-for="tag in tags" :key="tag.id" :value="tag.id">
+                            {{ tag.name }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
 
         <!-- Action Buttons -->
@@ -52,16 +67,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { useTagsStore } from '@/features/tags/stores/tags.store'
+import type { Tag } from '@/features/tags/types'
 
 interface FormData {
     number: number
     date: string
     amount: number
     description: string
+    selectedTagId?: string
 }
 
 interface Props {
@@ -72,16 +97,43 @@ interface Props {
 interface Emits {
     (e: 'submit', data: FormData): void
     (e: 'cancel'): void
+    (e: 'update:formData', data: FormData): void
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
+const tagsStore = useTagsStore()
+const tags = ref<Tag[]>([])
+const isLoadingTags = ref(false)
+
+// Computed for selectedTagId with getter/setter to sync with parent formData
+const selectedTagId = computed({
+    get: () => props.formData.selectedTagId,
+    set: (value: string | undefined) => {
+        // Update parent formData by emitting update event
+        emit('update:formData', { ...props.formData, selectedTagId: value })
+    }
+})
+
+// Load tags on mount
+onMounted(async () => {
+    isLoadingTags.value = true
+    try {
+        tags.value = await tagsStore.getTags('INVOICE')
+    } catch (error) {
+        console.error('Error loading tags:', error)
+    } finally {
+        isLoadingTags.value = false
+    }
+})
+
 const canSubmit = computed(() => {
     return (
         props.formData.number > 0 &&
         props.formData.date &&
-        props.formData.amount > 0
+        props.formData.amount > 0 &&
+        !!props.formData.selectedTagId
     )
 })
 

@@ -48,7 +48,7 @@
                         @change="handleFileSelect" class="hidden" :disabled="isSubmitting" />
 
                     <!-- Clickable Upload Area -->
-                    <div @click="$refs.fileInput.click()"
+                    <div @click="fileInput?.click()"
                         class="flex-1 border-2 border-dashed border-gray-300 rounded-lg p-4 cursor-pointer hover:border-teal-400 hover:bg-teal-50 transition-colors"
                         :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : ''">
                         <div class="flex items-center justify-center gap-2 text-gray-600">
@@ -86,33 +86,35 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useInvoiceApi } from '../composables/useInvoiceApi'
-import { useAuth0 } from '@auth0/auth0-vue'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { formatFileSize } from '@/lib/formatters'
-import type { CreateCommentRequest, CommentAttachmentPresignedUrlRequest } from '../types'
+import type { CreateCommentRequest, CommentAttachmentPresignedUrlRequest, InvoiceComment } from '../types'
 
 interface Props {
     invoiceId: string
 }
 
 interface Emits {
-    (e: 'comment-created'): void
+    (e: 'comment-created', comment: InvoiceComment): void
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const { user } = useAuth0()
+const authStore = useAuthStore()
+const user = computed(() => authStore.user)
 const { createComment, getCommentAttachmentPresignedUrls, uploadToS3 } = useInvoiceApi()
 
 const message = ref('')
 const selectedFiles = ref<File[]>([])
 const isSubmitting = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
 
-const userAvatar = computed(() => user.value?.picture || '')
+const userAvatar = computed(() => '') // User avatar not supported yet
 const userInitials = computed(() => {
     const name = user.value?.name || 'Usuario'
     return name.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -150,7 +152,7 @@ const submitComment = async () => {
 
     try {
         // Upload files if any
-        let attachments: Array<{
+        const attachments: Array<{
             fileId: string
             fileName: string
             contentType: string
@@ -182,6 +184,9 @@ const submitComment = async () => {
             for (const [fileType, files] of Object.entries(filesByType)) {
                 for (const file of files) {
                     const presignedUrl = presignedResponse.urls[urlIndex]
+                    if (!presignedUrl) {
+                        throw new Error('Presigned URL no disponible')
+                    }
                     await uploadToS3(presignedUrl.url, file)
 
                     attachments.push({
@@ -201,13 +206,13 @@ const submitComment = async () => {
             attachments: attachments.length > 0 ? attachments : undefined
         }
 
-        await createComment(props.invoiceId, commentData)
+        const newComment = await createComment(props.invoiceId, commentData)
 
         // Clear form
         message.value = ''
         selectedFiles.value = []
 
-        emit('comment-created')
+        emit('comment-created', newComment)
     } catch (error) {
         console.error('Error creating comment:', error)
         // TODO: Show error message to user

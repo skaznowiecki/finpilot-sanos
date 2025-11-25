@@ -1,20 +1,13 @@
-import { useAuth0 } from '@auth0/auth0-vue'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useRouter } from 'vue-router'
 
 export function useAuthActions() {
-    const { logout } = useAuth0()
+    const authStore = useAuthStore()
     const router = useRouter()
 
-    const handleLogout = async () => {
-        try {
-            await logout({
-                logoutParams: {
-                    returnTo: window.location.origin
-                }
-            })
-        } catch (error) {
-            console.error('Logout failed:', error)
-        }
+    const handleLogout = () => {
+        authStore.logout()
+        router.push({ name: 'Login' })
     }
 
     const navigateToSettings = () => {

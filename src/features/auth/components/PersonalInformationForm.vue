@@ -20,7 +20,8 @@
                                 <SelectValue placeholder="Selecciona el tipo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem v-for="option in TAX_ID_TYPE_OPTIONS" :key="option.value" :value="option.value">
+                                <SelectItem v-for="option in TAX_ID_TYPE_OPTIONS" :key="option.value"
+                                    :value="option.value">
                                     {{ option.label }}
                                 </SelectItem>
                             </SelectContent>
@@ -57,12 +58,13 @@
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <Button type="button" variant="outline" @click="handleCancel" :disabled="saving" class="cursor-pointer">
+                    <Button type="button" variant="outline" @click="handleCancel" :disabled="saving"
+                        class="cursor-pointer">
                         Cancelar
                     </Button>
                     <Button type="submit" :disabled="saving || !hasChanges" class="cursor-pointer">
-                        <svg v-if="saving" class="w-4 h-4 mr-2 animate-spin" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
+                        <svg v-if="saving" class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
@@ -88,9 +90,25 @@ import {
     SelectValue
 } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { TAX_ID_TYPE_OPTIONS, REGIMEN_TYPE_OPTIONS } from '@/features/onboarding/types'
-import type { RegimenType, TaxIdType } from '@/features/onboarding/types'
-import type { Party } from '../types'
+import type { RegimenType, TaxIdType, Party } from '@/features/auth/types'
+
+// Tax ID type options matching auth types
+const TAX_ID_TYPE_OPTIONS = [
+  { value: 'CUIT' as TaxIdType, label: 'CUIT' },
+  { value: 'CUIL' as TaxIdType, label: 'CUIL' },
+  { value: 'DNI' as TaxIdType, label: 'DNI' },
+  { value: 'PASSPORT' as TaxIdType, label: 'Pasaporte' },
+  { value: 'FOREIGN_ID' as TaxIdType, label: 'ID Extranjero' },
+  { value: 'OTHER' as TaxIdType, label: 'Otro' }
+] as const
+
+// Regimen type options matching auth types
+const REGIMEN_TYPE_OPTIONS = [
+  { value: 'RESPONSABLE_INSCRIPTO' as RegimenType, label: 'Responsable Inscripto' },
+  { value: 'MONOTRIBUTO' as RegimenType, label: 'Monotributo' },
+  { value: 'EXENTO' as RegimenType, label: 'Exento' },
+  { value: 'OTRO' as RegimenType, label: 'Otro' }
+] as const
 
 interface Props {
     party: Party | null

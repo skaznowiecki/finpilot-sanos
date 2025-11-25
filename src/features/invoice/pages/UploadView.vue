@@ -53,7 +53,8 @@
             </div>
 
             <!-- Invoice Form -->
-            <InvoiceForm :form-data="formData" :is-creating="isCreating" @submit="handleSubmit" @cancel="reset" />
+            <InvoiceForm :form-data="formData" :is-creating="isCreating" @submit="handleSubmit" @cancel="reset"
+              @update:form-data="formData = $event" />
           </div>
         </Card>
       </div>
@@ -87,12 +88,22 @@ const {
   reset
 } = useInvoiceUpload()
 
+// Form data type matching InvoiceForm
+interface InvoiceFormData {
+  number: number
+  date: string
+  amount: number
+  description: string
+  selectedTagId?: string
+}
+
 // Form data
-const formData = ref({
+const formData = ref<InvoiceFormData>({
   number: 0,
   date: '',
   amount: 0,
-  description: ''
+  description: '',
+  selectedTagId: undefined
 })
 
 // Methods
@@ -112,7 +123,7 @@ const handleFileDrop = async (file: File) => {
   }
 }
 
-const handleSubmit = async (data: typeof formData.value) => {
+const handleSubmit = async (data: InvoiceFormData) => {
   try {
     await createInvoiceFromData(data)
 
@@ -127,7 +138,7 @@ const handleSubmit = async (data: typeof formData.value) => {
 }
 
 const goBack = () => {
-  router.push({ name: 'Invoices' })
+  router.push({ name: 'Home' })
 }
 
 // Initialize form with extracted data

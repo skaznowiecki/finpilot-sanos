@@ -16,66 +16,56 @@
       No hay comentarios aún
     </div>
 
-    <div v-else class="h-96 overflow-y-auto space-y-4 pr-2">
-      <div v-for="comment in comments.slice().reverse()" :key="comment.id" :class="[
-        'flex',
-        isCurrentUserComment(comment) ? 'justify-end' : 'justify-start'
-      ]">
-        <div :class="[
-          'max-w-[70%] rounded-lg p-4',
-          isCurrentUserComment(comment)
-            ? 'bg-teal-50 border border-teal-200'
-            : 'bg-white border border-gray-200'
+    <div v-else class="h-96 overflow-y-auto space-y-3 pr-2">
+      <div v-for="(comment, index) in comments.slice().reverse()" :key="comment.id" 
+        :class="[
+          'flex items-start gap-3 py-3',
+          isCurrentUserComment(comment) ? 'flex-row-reverse' : '',
+          index < comments.length - 1 ? 'border-b border-gray-100' : ''
         ]">
-          <div class="flex items-start gap-3" :class="isCurrentUserComment(comment) ? 'flex-row-reverse' : ''">
-            <!-- Author Avatar -->
-            <Avatar class="h-8 w-8 flex-shrink-0">
-              <AvatarImage :src="getAuthorAvatar(comment.author)" />
-              <AvatarFallback>{{ getAuthorInitials(comment.author) }}</AvatarFallback>
-            </Avatar>
+        <!-- Author Avatar -->
+        <Avatar class="h-7 w-7 flex-shrink-0">
+          <AvatarImage :src="getAuthorAvatar(comment.author)" />
+          <AvatarFallback class="text-xs">{{ getAuthorInitials(comment.author) }}</AvatarFallback>
+        </Avatar>
 
-            <div class="flex-1" :class="isCurrentUserComment(comment) ? 'text-right' : 'text-left'">
-              <!-- Comment Header -->
-              <div class="flex items-center gap-2 mb-2"
-                :class="isCurrentUserComment(comment) ? 'justify-end' : 'justify-start'">
-                <span class="font-medium" :class="isCurrentUserComment(comment) ? 'text-teal-900' : 'text-gray-900'">
-                  {{ comment.author.name || comment.author.email }}
-                </span>
-                <span class="text-sm text-gray-500">{{ formatDate(comment.createdAt) }}</span>
-                <span v-if="comment.edited" class="text-xs text-gray-400">(editado)</span>
-              </div>
+        <div class="flex-1 min-w-0" :class="isCurrentUserComment(comment) ? 'text-right' : 'text-left'">
+          <!-- Comment Header -->
+          <div class="flex items-center gap-2 mb-1 justify-between">
+            <span class="text-xs text-gray-400">{{ formatDate(comment.createdAt) }}</span>
+            <div class="flex items-center gap-2" :class="isCurrentUserComment(comment) ? 'flex-row-reverse' : ''">
+              <span class="text-sm font-medium text-gray-900">
+                {{ comment.author.name || comment.author.email }}
+              </span>
+              <span v-if="comment.edited" class="text-xs text-gray-400">· editado</span>
+            </div>
+          </div>
 
-              <!-- Comment Content -->
-              <div v-if="comment.isDeleted" class="text-gray-400 italic">
-                {{ comment.deletedMessage || 'Este comentario ha sido eliminado' }}
-              </div>
-              <div v-else class="whitespace-pre-wrap"
-                :class="isCurrentUserComment(comment) ? 'text-teal-800' : 'text-gray-800'">
-                {{ comment.message }}
-              </div>
+          <!-- Comment Content -->
+          <div v-if="comment.isDeleted" class="text-sm text-gray-400 italic">
+            {{ comment.deletedMessage || 'Este comentario ha sido eliminado' }}
+          </div>
+          <div v-else class="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+            {{ comment.message }}
+          </div>
 
-              <!-- Attachments -->
-              <div v-if="comment.attachments.length > 0" class="mt-3 space-y-2">
-                <div v-for="attachment in comment.attachments" :key="attachment.id"
-                  @click="downloadAttachment(attachment.id)"
-                  class="inline-flex items-center gap-2 rounded px-3 py-2 cursor-pointer hover:opacity-80 transition-opacity"
-                  :class="isCurrentUserComment(comment) ? 'bg-teal-100 hover:bg-teal-200' : 'bg-gray-50 hover:bg-gray-100'">
-                  <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                    </path>
-                  </svg>
-                  <span class="text-sm" :class="isCurrentUserComment(comment) ? 'text-teal-700' : 'text-gray-700'">
-                    {{ attachment.fileName }}
-                  </span>
-                  <span class="text-xs text-gray-500">({{ formatFileSize(attachment.fileSizeBytes) }})</span>
-                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                    </path>
-                  </svg>
-                </div>
-              </div>
+          <!-- Attachments -->
+          <div v-if="comment.attachments.length > 0" class="mt-2 flex flex-wrap gap-2">
+            <div v-for="attachment in comment.attachments" :key="attachment.id"
+              @click="downloadAttachment(attachment.id)"
+              class="flex items-center gap-2 text-xs text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-2 cursor-pointer transition-colors min-w-[180px] flex-1">
+              <svg class="w-4 h-4 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+              </svg>
+              <span class="truncate flex-1 min-w-0">{{ attachment.fileName }}</span>
+              <span class="text-gray-400 flex-shrink-0 text-[10px]">({{ formatFileSize(attachment.fileSizeBytes) }})</span>
+              <svg class="w-3.5 h-3.5 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                </path>
+              </svg>
             </div>
           </div>
         </div>
@@ -88,8 +78,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useAuth0 } from '@auth0/auth0-vue'
+import { ref, onMounted, computed } from 'vue'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useInvoiceApi } from '../composables/useInvoiceApi'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -103,7 +93,8 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const { user } = useAuth0()
+const authStore = useAuthStore()
+const user = computed(() => authStore.user)
 const { listComments, getCommentAttachmentDownloadUrl } = useInvoiceApi()
 
 const comments = ref<InvoiceComment[]>([])
@@ -125,8 +116,9 @@ const fetchComments = async () => {
   }
 }
 
-const handleCommentCreated = () => {
-  fetchComments()
+const handleCommentCreated = (newComment: InvoiceComment) => {
+  // Add the new comment to the list without refetching
+  comments.value.push(newComment)
 }
 
 const downloadAttachment = async (attachmentId: string) => {
@@ -147,16 +139,17 @@ const getAuthorAvatar = (author: { email?: string }) => {
 const getAuthorInitials = (author: { name: string | null; email?: string }): string => {
   if (!author.name) {
     // Fallback to email if name is null
-    return author.email?.split('@')[0].substring(0, 2).toUpperCase() || 'U'
+    const emailPart = author.email?.split('@')[0]
+    return emailPart?.substring(0, 2).toUpperCase() || 'U'
   }
   return author.name.split(' ').map(n => n[0]).join('').toUpperCase()
 }
 
 const isCurrentUserComment = (comment: InvoiceComment): boolean => {
-  if (!user.value?.sub || !comment.author.userId) {
+  if (!user.value?.id || !comment.author.userId) {
     return false
   }
-  return comment.author.userId === user.value.sub
+  return comment.author.userId === user.value.id
 }
 
 onMounted(() => {

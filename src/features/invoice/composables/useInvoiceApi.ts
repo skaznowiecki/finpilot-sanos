@@ -9,7 +9,8 @@ import type {
   CommentListResponse,
   CreateCommentRequest,
   CommentAttachmentPresignedUrlRequest,
-  CommentAttachmentPresignedUrlResponse
+  CommentAttachmentPresignedUrlResponse,
+  InvoiceComment
 } from '../types'
 
 export function useInvoiceApi() {
@@ -74,7 +75,7 @@ export function useInvoiceApi() {
     return response.data
   }
 
-  const createComment = async (invoiceId: string, data: CreateCommentRequest) => {
+  const createComment = async (invoiceId: string, data: CreateCommentRequest): Promise<InvoiceComment> => {
     const response = await post(`/invoices/${invoiceId}/comments`, data)
     return response.data
   }

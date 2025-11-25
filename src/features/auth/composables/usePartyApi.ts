@@ -1,5 +1,5 @@
 import { useApi } from '@/lib/api'
-import type { Party, BankAccount, UpdatePartyRequest, UpdateBankAccountRequest, CreateBankAccountRequest } from '../types'
+import type { Party, BankAccount, UpdatePartyRequest, UpdateBankAccountRequest, CreateBankAccountRequest } from '@/features/auth/types'
 
 export function usePartyApi() {
   const { get, put, post, delete: deleteRequest } = useApi()

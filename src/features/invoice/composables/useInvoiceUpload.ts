@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { useInvoiceApi } from './useInvoiceApi'
+import { useTagsStore } from '@/features/tags/stores/tags.store'
 import { SupportedFileType } from '../types'
 import type {
     ExtractedInvoiceData,
@@ -8,6 +9,7 @@ import type {
 
 export function useInvoiceUpload() {
     const { getPresignedUrls, uploadToS3, extractInvoiceData, createInvoice } = useInvoiceApi()
+    const tagsStore = useTagsStore()
 
     // State
     const selectedFile = ref<File | null>(null)
@@ -93,6 +95,10 @@ export function useInvoiceUpload() {
             }
 
             const presignedUrl = presignedResponse.urls[0]
+            if (!presignedUrl) {
+                throw new Error('Presigned URL no disponible')
+            }
+            
             invoiceFileId.value = presignedUrl.id
 
             // Upload file
@@ -118,9 +124,14 @@ export function useInvoiceUpload() {
         date: string
         amount: number
         description?: string
+        selectedTagId?: string
     }) => {
         if (!extractedData.value || !invoiceFileId.value) {
             throw new Error('No hay datos extraídos para crear la factura')
+        }
+
+        if (!formData.selectedTagId) {
+            throw new Error('Debe seleccionar una unidad de negocio')
         }
 
         isCreating.value = true
@@ -145,6 +156,18 @@ export function useInvoiceUpload() {
             }
 
             const result = await createInvoice(invoiceData)
+            
+            // Assign tag to invoice after successful creation
+            if (formData.selectedTagId && result?.id) {
+                try {
+                    await tagsStore.assignTagToInvoice(result.id, formData.selectedTagId)
+                } catch (tagError) {
+                    // Log error but don't fail the invoice creation
+                    console.error('Error assigning tag to invoice:', tagError)
+                    // Optionally, you could show a warning to the user here
+                }
+            }
+
             return result
 
         } catch (err) {

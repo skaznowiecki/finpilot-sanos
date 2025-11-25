@@ -53,20 +53,21 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
-import { useAuth0 } from '@auth0/auth0-vue'
+import { onMounted, ref, computed } from 'vue'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue'
-import { usePartyData } from '../composables/usePartyData'
+import { usePartyData } from '@/features/auth/composables/usePartyData'
 import { toast } from '@/components/ui/toast'
-import PersonalInformationForm from '../components/PersonalInformationForm.vue'
-import BankAccountsSection from '../components/BankAccountsSection.vue'
-import AccessSection from '../components/AccessSection.vue'
-import type { RegimenType, TaxIdType } from '@/features/onboarding/types'
-import type { CreateBankAccountRequest, UpdateBankAccountRequest } from '../types'
+import PersonalInformationForm from '@/features/auth/components/PersonalInformationForm.vue'
+import BankAccountsSection from '@/features/auth/components/BankAccountsSection.vue'
+import AccessSection from '@/features/auth/components/AccessSection.vue'
+import { extractErrorMessage } from '@/lib/utils'
+import type { RegimenType, TaxIdType, CreateBankAccountRequest, UpdateBankAccountRequest } from '@/features/auth/types'
 
-const { user } = useAuth0()
+const authStore = useAuthStore()
+const user = computed(() => authStore.user)
 const router = useRouter()
 const partyData = usePartyData()
 const accessSectionRef = ref<InstanceType<typeof AccessSection> | null>(null)
@@ -77,12 +78,21 @@ const showSuccess = (message: string) => {
   })
 }
 
+const showError = (message: string) => {
+  toast({
+    title: 'Error',
+    description: message,
+    variant: 'destructive'
+  })
+}
+
 const handleUpdateParty = async (data: { name: string; taxId?: string; taxIdType?: TaxIdType; address?: string; regimen?: RegimenType }) => {
   try {
     await partyData.updateParty(data)
     showSuccess('Información personal actualizada exitosamente')
   } catch (error) {
-    console.error('Failed to update party:', error)
+    const errorMessage = extractErrorMessage(error, 'No se pudo actualizar la información personal. Por favor, intenta de nuevo.')
+    showError(errorMessage)
   }
 }
 
@@ -102,6 +112,7 @@ const handleCreateBankAccount = async (data: CreateBankAccountRequest) => {
             await partyData.updateBankAccount(account.id, { isPrimary: false })
           } catch (err) {
             console.error('Failed to update existing primary account:', err)
+            // Continue with creation even if this fails
           }
         }
       }
@@ -110,7 +121,8 @@ const handleCreateBankAccount = async (data: CreateBankAccountRequest) => {
     await partyData.createBankAccount(data)
     showSuccess('Cuenta bancaria creada exitosamente')
   } catch (error) {
-    console.error('Failed to create bank account:', error)
+    const errorMessage = extractErrorMessage(error, 'No se pudo crear la cuenta bancaria. Por favor, intenta de nuevo.')
+    showError(errorMessage)
   }
 }
 
@@ -124,6 +136,7 @@ const handleUpdateBankAccount = async (accountId: string, data: UpdateBankAccoun
             await partyData.updateBankAccount(otherAccount.id, { isPrimary: false })
           } catch (err) {
             console.error('Failed to update other primary account:', err)
+            // Continue with update even if this fails
           }
         }
       }
@@ -134,7 +147,8 @@ const handleUpdateBankAccount = async (accountId: string, data: UpdateBankAccoun
     await partyData.fetchParty()
     showSuccess('Cuenta bancaria actualizada exitosamente')
   } catch (error) {
-    console.error('Failed to update bank account:', error)
+    const errorMessage = extractErrorMessage(error, 'No se pudo actualizar la cuenta bancaria. Por favor, intenta de nuevo.')
+    showError(errorMessage)
   }
 }
 
@@ -164,8 +178,8 @@ const handleDeleteBankAccount = async (accountId: string) => {
     await partyData.deleteBankAccount(accountId)
     showSuccess('Cuenta bancaria eliminada exitosamente')
   } catch (error) {
-    console.error('Failed to delete bank account:', error)
-    alert('Error al eliminar la cuenta bancaria')
+    const errorMessage = extractErrorMessage(error, 'No se pudo eliminar la cuenta bancaria. Por favor, intenta de nuevo.')
+    showError(errorMessage)
   }
 }
 
@@ -184,20 +198,13 @@ const handleChangePassword = async (password: string, confirmPassword: string) =
     }
     showSuccess('Contraseña cambiada exitosamente')
   } catch (error: unknown) {
-    console.error('Error changing password:', error)
-    const errorMessage = error instanceof Error
-      ? error.message
-      : 'No se pudo cambiar la contraseña. Por favor, intenta de nuevo.'
+    const errorMessage = extractErrorMessage(error, 'No se pudo cambiar la contraseña. Por favor, intenta de nuevo.')
 
     if (accessSectionRef.value) {
       accessSectionRef.value.setError(errorMessage)
     }
 
-    toast({
-      title: 'Error',
-      description: errorMessage,
-      variant: 'destructive'
-    })
+    showError(errorMessage)
   } finally {
     if (accessSectionRef.value) {
       accessSectionRef.value.setLoading(false)
@@ -206,7 +213,7 @@ const handleChangePassword = async (password: string, confirmPassword: string) =
 }
 
 const goBack = () => {
-  router.go(-1)
+  router.push({ name: 'Home' })
 }
 
 // Fetch party data on mount

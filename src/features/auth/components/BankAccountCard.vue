@@ -20,11 +20,7 @@
                 <Button variant="outline" size="sm" @click="handleEdit" class="cursor-pointer">
                     Editar
                 </Button>
-                <Button 
-                    variant="outline" 
-                    size="sm" 
-                    @click="handleDelete"
-                    :disabled="!canDelete"
+                <Button variant="outline" size="sm" @click="handleDelete" :disabled="!canDelete"
                     class="text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer">
                     Eliminar
                 </Button>
@@ -35,19 +31,17 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div class="space-y-1">
                     <Label for="cbu" class="text-sm">CBU *</Label>
-                    <Input id="cbu" v-model="formData.accountNumber"
-                        placeholder="Ingresa el CBU" required class="h-9" />
+                    <Input id="cbu" v-model="formData.accountNumber" placeholder="Ingresa el CBU" required
+                        class="h-9" />
                 </div>
                 <div class="space-y-1">
                     <Label for="bankName" class="text-sm">Nombre del Banco *</Label>
-                    <Input id="bankName" v-model="formData.bankName" placeholder="Nombre del banco" required class="h-9" />
+                    <Input id="bankName" v-model="formData.bankName" placeholder="Nombre del banco" required
+                        class="h-9" />
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <input 
-                    type="checkbox" 
-                    id="isPrimary" 
-                    :checked="formData.isPrimary"
+                <input type="checkbox" id="isPrimary" :checked="formData.isPrimary"
                     @change="handlePrimaryChange(($event.target as HTMLInputElement).checked)"
                     class="rounded border-gray-300" />
                 <Label for="isPrimary" class="cursor-pointer text-sm">Cuenta Principal</Label>
@@ -69,7 +63,7 @@ import { ref, reactive, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { BankAccount, UpdateBankAccountRequest } from '../types'
+import type { BankAccount, UpdateBankAccountRequest } from '@/features/auth/types'
 
 interface Props {
     account: BankAccount
@@ -91,17 +85,21 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const editing = ref(false)
-const formData = reactive<UpdateBankAccountRequest>({
-    bankName: null,
-    accountNumber: null,
+const formData = reactive<{
+    bankName: string
+    accountNumber: string
+    isPrimary: boolean
+}>({
+    bankName: '',
+    accountNumber: '',
     isPrimary: false
 })
 
 // Initialize form data from account
 watch(() => props.account, (account) => {
-    formData.bankName = account.bankName || null
-    formData.accountNumber = account.accountNumber || null
-    formData.isPrimary = account.isPrimary || false
+    formData.bankName = account.bankName || ''
+    formData.accountNumber = account.accountNumber || ''
+    formData.isPrimary = account.isPrimary ?? false
 }, { immediate: true })
 
 const handleEdit = () => {
@@ -110,9 +108,9 @@ const handleEdit = () => {
 
 const handleCancel = () => {
     // Reset form data
-    formData.bankName = props.account.bankName || null
-    formData.accountNumber = props.account.accountNumber || null
-    formData.isPrimary = props.account.isPrimary || false
+    formData.bankName = props.account.bankName || ''
+    formData.accountNumber = props.account.accountNumber || ''
+    formData.isPrimary = props.account.isPrimary ?? false
     editing.value = false
 }
 
@@ -122,7 +120,11 @@ const handlePrimaryChange = (isPrimary: boolean) => {
 }
 
 const handleSubmit = () => {
-    emit('update', { ...formData })
+    emit('update', {
+        ...formData,
+        bankName: formData.bankName || null,
+        accountNumber: formData.accountNumber || null
+    })
     editing.value = false
 }
 

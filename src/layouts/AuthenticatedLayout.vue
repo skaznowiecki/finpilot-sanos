@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-background">
+  <div class="h-screen bg-background flex flex-col overflow-hidden">
     <!-- Top Navigation Bar -->
-    <nav class="bg-background text-foreground px-6 py-4 border-b border-border">
+    <nav class="bg-background text-foreground px-6 py-4 border-b border-border flex-shrink-0">
       <div class="flex items-center justify-between">
         <div class="flex items-center">
           <img src="/sanos.png" alt="SANOS SALUD" class="h-14" />
@@ -14,7 +14,6 @@
               <button
                 class="flex items-center space-x-2 hover:bg-accent rounded-lg px-3 py-2 transition-colors cursor-pointer">
                 <Avatar class="h-8 w-8">
-                  <AvatarImage :src="user?.picture" :alt="user?.name || 'User'" />
                   <AvatarFallback class="bg-primary text-primary-foreground text-sm">
                     {{ getUserInitials(user?.name || user?.email) }}
                   </AvatarFallback>
@@ -65,7 +64,7 @@
     </nav>
 
     <!-- Main Content Area -->
-    <div class="bg-background min-h-screen">
+    <div class="bg-background flex-1 overflow-y-auto">
       <!-- Page Header -->
       <div class="px-6 py-8">
         <div class="flex items-center justify-between mb-6">
@@ -94,7 +93,8 @@
 </template>
 
 <script setup lang="ts">
-import { useAuth0 } from '@auth0/auth0-vue'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -107,7 +107,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthActions } from '@/features/auth/composables/useAuthActions'
 
-const { user } = useAuth0()
+const authStore = useAuthStore()
+const user = computed(() => authStore.user)
 const { handleLogout, navigateToSettings } = useAuthActions()
 const router = useRouter()
 

@@ -109,7 +109,7 @@ const handleDrop = (event: DragEvent) => {
     isDragOver.value = false
 
     const files = event.dataTransfer?.files
-    if (files && files.length > 0) {
+    if (files && files.length > 0 && files[0]) {
         emit('file-drop', files[0])
     }
 }

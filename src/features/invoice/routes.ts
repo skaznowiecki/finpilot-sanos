@@ -1,6 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
-import { authGuard } from '@/shared/guards/auth.guard'
-import { onboardingGuard } from '@/router/guards'
+import { authGuard, onboardingGuard } from '@/router/guards'
 
 export const invoiceRoutes: RouteRecordRaw[] = [
     {

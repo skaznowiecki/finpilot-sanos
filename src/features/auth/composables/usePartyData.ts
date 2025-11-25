@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
-import { usePartyApi } from './usePartyApi'
-import type { Party, BankAccount, UpdatePartyRequest, UpdateBankAccountRequest, CreateBankAccountRequest } from '../types'
+import { usePartyApi } from '@/features/auth/composables/usePartyApi'
+import type { Party, BankAccount, UpdatePartyRequest, UpdateBankAccountRequest, CreateBankAccountRequest } from '@/features/auth/types'
 
 export function usePartyData() {
   const partyApi = usePartyApi()
@@ -45,13 +45,15 @@ export function usePartyData() {
   const updateParty = async (data: UpdatePartyRequest) => {
     try {
       saving.value = true
-      error.value = null
+      // Don't set global error for update operations - let the caller handle errors
+      // This prevents the page from breaking when validation errors occur
 
       const updatedParty = await partyApi.updateMyParty(data)
       party.value = updatedParty
       return updatedParty
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to update party data'
+      // Log error but don't set global error state
+      // The caller should handle error display (e.g., toast notifications)
       console.error('Error updating party:', err)
       throw err
     } finally {
@@ -62,13 +64,14 @@ export function usePartyData() {
   const createBankAccount = async (data: CreateBankAccountRequest) => {
     try {
       saving.value = true
-      error.value = null
+      // Don't set global error for create operations - let the caller handle errors
 
       const newAccount = await partyApi.createBankAccount(data)
       bankAccounts.value.push(newAccount)
       return newAccount
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to create bank account'
+      // Log error but don't set global error state
+      // The caller should handle error display (e.g., toast notifications)
       console.error('Error creating bank account:', err)
       throw err
     } finally {
@@ -79,7 +82,7 @@ export function usePartyData() {
   const updateBankAccount = async (bankAccountId: string, data: UpdateBankAccountRequest) => {
     try {
       saving.value = true
-      error.value = null
+      // Don't set global error for update operations - let the caller handle errors
 
       const updatedAccount = await partyApi.updateBankAccount(bankAccountId, data)
 
@@ -93,7 +96,8 @@ export function usePartyData() {
 
       return updatedAccount
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to update bank account'
+      // Log error but don't set global error state
+      // The caller should handle error display (e.g., toast notifications)
       console.error('Error updating bank account:', err)
       throw err
     } finally {
@@ -104,7 +108,7 @@ export function usePartyData() {
   const deleteBankAccount = async (bankAccountId: string) => {
     try {
       saving.value = true
-      error.value = null
+      // Don't set global error for delete operations - let the caller handle errors
 
       await partyApi.deleteBankAccount(bankAccountId)
 
@@ -114,7 +118,8 @@ export function usePartyData() {
         bankAccounts.value.splice(index, 1)
       }
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to delete bank account'
+      // Log error but don't set global error state
+      // The caller should handle error display (e.g., toast notifications)
       console.error('Error deleting bank account:', err)
       throw err
     } finally {
@@ -124,11 +129,12 @@ export function usePartyData() {
 
   const changePassword = async (password: string, confirmPassword: string): Promise<void> => {
     try {
-      error.value = null
+      // Don't set global error for password change - let the caller handle errors
 
       await partyApi.changePassword(password, confirmPassword)
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to change password'
+      // Log error but don't set global error state
+      // The caller should handle error display (e.g., toast notifications)
       console.error('Error changing password:', err)
       throw err
     }

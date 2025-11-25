@@ -1,13 +1,13 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth0 } from '@auth0/auth0-vue'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useOnboardingApi } from './useOnboardingApi'
 import type { PartyOnboardingForm, TaxIdType, RegimenType } from '../types'
 
 export function usePartyOnboarding() {
   // Dependencies
   const router = useRouter()
-  const { getAccessTokenSilently } = useAuth0()
+  const authStore = useAuthStore()
   const onboardingApi = useOnboardingApi()
 
   // Form state
@@ -39,8 +39,8 @@ export function usePartyOnboarding() {
   }
 
   const updateTaxId = (value: string) => {
-    // Only allow numeric input
-    const numericValue = value.replace(/\D/g, '')
+    // Only allow numeric input - remove all non-numeric characters including hyphens
+    const numericValue = value.replace(/[^0-9]/g, '')
     taxId.value = numericValue
     clearError()
   }
@@ -119,11 +119,15 @@ export function usePartyOnboarding() {
         companyId: companyId as string
       })
 
-      // Wait for Auth0 metadata propagation
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Refresh user profile to get updated companyId
+      await authStore.refreshUser()
 
-      // Refresh token to get updated metadata
-      await handleTokenRefreshAndRedirect()
+      if (authStore.isOnboarded) {
+        router.push({ name: 'Home' })
+      } else {
+        // Fallback: reload page to ensure fresh session
+        window.location.href = '/'
+      }
 
     } catch (err: unknown) {
       console.error('Onboarding error:', err)
@@ -135,49 +139,6 @@ export function usePartyOnboarding() {
       )
     } finally {
       isSubmitting.value = false
-    }
-  }
-
-  // Token refresh and redirect logic
-  const handleTokenRefreshAndRedirect = async () => {
-    try {
-      // Poll for updated tokens with correct metadata (retry up to 3 times)
-      let hasCorrectMetadata = false
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          // Get fresh token with updated metadata
-          const tokenResponse = await getAccessTokenSilently({
-            cacheMode: 'off',
-            detailedResponse: true
-          })
-
-          // Check if the token has the correct metadata
-          const payload = JSON.parse(atob(tokenResponse.id_token?.split('.')[1] || ''))
-          const appMetadata = payload[`${import.meta.env.VITE_AUTH0_AUDIENCE}/app_metadata`] || {}
-
-          if (appMetadata.onboarded === true) {
-            hasCorrectMetadata = true
-            break
-          }
-
-          await new Promise(resolve => setTimeout(resolve, 1500))
-        } catch (error) {
-          console.error(`Token refresh attempt ${attempt} failed:`, error)
-          if (attempt === 3) throw error
-          await new Promise(resolve => setTimeout(resolve, 1500))
-        }
-      }
-
-      if (hasCorrectMetadata) {
-        router.push({ name: 'Home' })
-      } else {
-        // Fallback: reload page to ensure fresh session
-        window.location.href = '/'
-      }
-    } catch (tokenError) {
-      console.error('Error refreshing tokens:', tokenError)
-      // If token refresh fails, force a complete reload to get fresh session
-      window.location.href = '/'
     }
   }
 

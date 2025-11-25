@@ -48,8 +48,10 @@
               </Label>
               <Input id="taxId" :model-value="onboarding.taxId.value"
                 @update:model-value="(value: string | number) => onboarding.updateTaxId(String(value))"
+                @keydown="(e: KeyboardEvent) => { if (e.key === '-' || e.key === '–' || e.key === '—') e.preventDefault(); }"
                 placeholder="Sin puntos ni guiones" class="w-full" type="text" inputmode="numeric" pattern="[0-9]*"
                 required />
+              <p class="text-xs text-gray-500 mt-1">Ingresa solo números sin guiones</p>
             </div>
           </div>
 
@@ -84,12 +86,25 @@
             <span v-else>Completar registro</span>
           </Button>
         </form>
+
+        <!-- Logout button -->
+        <div class="mt-4">
+          <Button
+            type="button"
+            variant="ghost"
+            class="w-full text-gray-500 hover:text-gray-700 text-sm cursor-pointer"
+            @click="handleLogout"
+          >
+            Cerrar sesión
+          </Button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -103,7 +118,15 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { usePartyOnboarding } from '../composables/usePartyOnboarding'
 import { TAX_ID_TYPE_OPTIONS, REGIMEN_TYPE_OPTIONS, type RegimenType } from '../types'
+import { useAuthStore } from '@/features/auth/stores/auth.store'
 
 // Initialize the onboarding composable
 const onboarding = usePartyOnboarding()
+const router = useRouter()
+const authStore = useAuthStore()
+
+const handleLogout = () => {
+  authStore.logout()
+  router.push({ name: 'Login' })
+}
 </script>
